@@ -32,6 +32,16 @@ class CdpPermissionDomTest(unittest.TestCase):
         self.assertIn("[role=\"radio\"]", expression)
         self.assertIn("containers.length ? containers.map", expression)
 
+    def test_direct_permission_buttons_do_not_use_submit_flow(self) -> None:
+        expression = permission_action_expression("allow", "git status", "Do you want to allow this command?")
+
+        self.assertIn("const selectableOptionSelector = '[role=\"radio\"],[role=\"menuitemradio\"],label';", expression)
+        self.assertIn("root.querySelectorAll(selectableOptionSelector)", expression)
+        self.assertIn("submitNear(button, true, container.el)", expression)
+        self.assertIn("if (!container) continue;", expression)
+        self.assertNotIn("button,[role=\"button\"],[role=\"radio\"],[role=\"menuitemradio\"],label", expression)
+        self.assertNotIn("return [...document.querySelectorAll('button,[role=\"button\"]')]", expression)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -955,42 +955,47 @@ def permission_action_expression(action: str, command: str = "", justification: 
       const searchRoots = (containers.length ? containers.map(item => item.el) : [document.body])
         .filter((el, index, list) => el && list.indexOf(el) === index);
 
-      const submitNear = (optionButton, includeDisabled = false) => {{
+      const submitNear = (optionButton, includeDisabled = false, root = null) => {{
         const optionRect = optionButton.getBoundingClientRect();
+        const rootElement = root instanceof HTMLElement ? root : null;
+        const submitButtonsIn = node => [...node.querySelectorAll('button,[role="button"]')]
+          .filter(button => visible(button) && (includeDisabled || !isDisabled(button)))
+          .map(button => ({{ button, text: buttonText(button), rect: button.getBoundingClientRect() }}))
+          .filter(item => submitPattern.test(item.text) && !/提交或推送/.test(item.text));
         for (let node = optionButton.parentElement, depth = 0; node && depth < 9; depth += 1, node = node.parentElement) {{
+          if (rootElement && !rootElement.contains(node)) break;
           if (!(node instanceof HTMLElement) || !visible(node)) continue;
           const nodeRect = node.getBoundingClientRect();
           if (nodeRect.height > Math.max(360, window.innerHeight * 0.58) || nodeRect.width > window.innerWidth * 0.96) continue;
-          const buttons = [...node.querySelectorAll('button,[role="button"]')].filter(button => visible(button) && (includeDisabled || !isDisabled(button)));
-          const submit = buttons
-            .map(button => ({{ button, text: buttonText(button), rect: button.getBoundingClientRect() }}))
-            .filter(item => submitPattern.test(item.text) && !/提交或推送/.test(item.text))
+          const submit = submitButtonsIn(node)
             .sort((a, b) => Math.abs(a.rect.y - optionRect.y) - Math.abs(b.rect.y - optionRect.y))[0];
           if (submit) return submit;
         }}
-        return [...document.querySelectorAll('button,[role="button"]')]
-          .filter(button => visible(button) && (includeDisabled || !isDisabled(button)))
-          .map(button => ({{ button, text: buttonText(button), rect: button.getBoundingClientRect() }}))
-          .filter(item => submitPattern.test(item.text) && !/提交或推送/.test(item.text))
+        if (!rootElement || rootElement === document.body || rootElement === document.documentElement) return null;
+        const rootRect = rootElement.getBoundingClientRect();
+        if (rootRect.height > Math.max(460, window.innerHeight * 0.72) || rootRect.width > window.innerWidth * 0.96) return null;
+        return submitButtonsIn(rootElement)
           .filter(item => Math.abs(item.rect.x - optionRect.x) < 520 && item.rect.y >= optionRect.y - 8 && item.rect.y <= optionRect.y + 240)
           .sort((a, b) => Math.abs(a.rect.y - optionRect.y) - Math.abs(b.rect.y - optionRect.y) || b.rect.x - a.rect.x)[0] || null;
       }};
-      const enabledSubmitNear = async (optionButton, fallbackSubmit = null) => {{
+      const enabledSubmitNear = async (optionButton, fallbackSubmit = null, root = null) => {{
         const deadline = Date.now() + 1500;
         while (Date.now() < deadline) {{
-          const submit = submitNear(optionButton, true) || fallbackSubmit;
+          const submit = submitNear(optionButton, true, root) || fallbackSubmit;
           if (submit && visible(submit.button) && !isDisabled(submit.button)) return submit;
           await sleep(80);
         }}
         return null;
       }};
 
+      const selectableOptionSelector = '[role="radio"],[role="menuitemradio"],label';
       const optionCandidates = [];
       for (const root of searchRoots) {{
-        for (const button of [...root.querySelectorAll('button,[role="button"],[role="radio"],[role="menuitemradio"],label')].filter(button => visible(button) && !isDisabled(button))) {{
+        for (const button of [...root.querySelectorAll(selectableOptionSelector)].filter(button => visible(button) && !isDisabled(button))) {{
           const text = buttonText(button);
           if (!text || submitPattern.test(text) || /提交或推送/.test(text)) continue;
           const container = containers.find(item => item.el === root || item.el.contains(button));
+          if (!container) continue;
           const rect = button.getBoundingClientRect();
           if (!isInViewport(rect)) continue;
           if (rect.x < 240 || rect.y < 40 || rect.y > window.innerHeight + 80) continue;
@@ -1013,7 +1018,7 @@ def permission_action_expression(action: str, command: str = "", justification: 
             if (denyPattern.test(text)) score -= 90;
           }}
           if (rect.width >= 36 && rect.height >= 24) score += 6;
-          if (score > 95) optionCandidates.push({{ button, text, score, rect, noSubmit, submit: noSubmit ? null : submitNear(button, true) }});
+          if (score > 95) optionCandidates.push({{ button, text, score, rect, noSubmit, submit: noSubmit ? null : submitNear(button, true, container.el), container: container.el }});
         }}
       }}
       optionCandidates.sort((a, b) => b.score - a.score || a.rect.y - b.rect.y || a.rect.x - b.rect.x);
@@ -1024,7 +1029,7 @@ def permission_action_expression(action: str, command: str = "", justification: 
         await sleep(180);
         let submitText = '';
         if (!optionTarget.noSubmit) {{
-          const submit = await enabledSubmitNear(optionTarget.button, optionTarget.submit);
+          const submit = await enabledSubmitNear(optionTarget.button, optionTarget.submit, optionTarget.container);
           if (!submit) {{
             return {{
               ok: false,
