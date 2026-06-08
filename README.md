@@ -4,9 +4,11 @@
 
 用手机浏览器，遥控 Mac 上的 Codex Desktop。
 
-你在手机上发消息、切换线程、看历史和运行进度、处理权限、停止回复；Codex 仍在 Mac 本机跑任务。Codex Go 不是云端聊天，也不会代替 Codex 去调模型——它只是把 Codex Desktop 的控制台「搬」到手机浏览器里。
+你在手机上发消息、切换线程、看历史和运行进度、停止回复；Codex 仍在 Mac 本机跑任务。Codex Go 不是云端聊天，也不会代替 Codex 去调模型——它只是把 Codex Desktop 的控制台「搬」到手机浏览器里。
 
-**用法前提：** 手机和 Mac 连同一个 Wi‑Fi。外网/龙虾用法见后文frp。
+**主要功能：** 多主题切换、消息队列引导、附件、权限处理等实用功能。
+
+**用法前提：** 手机和 Mac 连同一个 Wi‑Fi。外网/龙虾用法见后文 frp，只适合喜欢折腾的用户。
 
 ## 截图
 
@@ -69,11 +71,11 @@ uv sync
 示例：
 
 ```text
-http://192.168.1.10:8080/?token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-Mobile URL: http://localhost:8080/?token=...
+LAN: http://192.168.1.10:8080/?token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+Local: http://localhost:8080/?token=...
 ```
 
-把带局域网 IP 的那一行**整段复制**到手机浏览器（必须包含 `?token=...`）。
+把带局域网 IP 的那一行(LAN)**整段复制**到手机浏览器（必须包含 `?token=...`）。
 
 token 和运行日志保存在：
 
@@ -140,6 +142,7 @@ token 和运行日志保存在：
 | ---------------------------- | ----------------------------------------- |
 | [docs/wiki.md](docs/wiki.md) | 环境要求、工作原理、完整排障、界面语言与 CDP、修改端口、公网 frp、开发说明 |
 | [AGENTS.md](AGENTS.md)       | 给贡献者与 AI 的仓库约定                            |
+
 
 ## 参考与感谢
 
