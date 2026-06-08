@@ -62,6 +62,21 @@ class ThemeSettingsTest(unittest.TestCase):
         self.assertNotIn("isAndroidKeyboardBrowser && hasLocalAppearanceSettings", block)
         self.assertNotIn("persistAppearanceSettingsLocal();", block)
 
+    def test_settings_include_progress_visibility_switch(self) -> None:
+        self.assertIn('id="setting-progress-row"', self.html)
+        self.assertIn('id="setting-progress"', self.html)
+        self.assertIn("const settingProgressSwitch = document.getElementById('setting-progress');", self.app_js)
+        self.assertIn("const PROGRESS_VISIBLE_STORAGE_KEY = 'codexGo.progressVisible.v1';", self.app_js)
+        self.assertIn("let progressVisible = readProgressVisible();", self.app_js)
+        self.assertIn("wireInstantActionButton(settingProgressSwitch, toggleProgressVisible);", self.app_js)
+
+    def test_progress_visibility_filters_only_commentary_steps(self) -> None:
+        self.assertIn("function visibleProcessSteps(steps = []) {", self.app_js)
+        self.assertIn("return progressVisible ? normalized : normalized.filter(step => step.kind !== 'commentary' && step.label !== '进度');", self.app_js)
+        self.assertIn("activeAssistant.processSteps = data.steps || [];", self.app_js)
+        self.assertIn("rerenderActiveProcessSteps();", self.app_js)
+        self.assertIn('body.progress-hidden .steps li[data-kind="commentary"] { display: none; }', self.base_css)
+
     def test_dark_theme_context_ring_has_distinct_pie_style(self) -> None:
         dark_css = self.theme_css["dark"]
         self.assertIn("body.theme-dark .context-status.level-medium", dark_css)

@@ -29,6 +29,7 @@ const settingsButton = document.getElementById('settings');
 const settingsCard = document.getElementById('settings-card');
 const themeSelect = document.getElementById('theme-select');
 const settingSuperModeSwitch = document.getElementById('setting-super-mode');
+const settingProgressSwitch = document.getElementById('setting-progress');
 const threadCurrentPin = document.getElementById('thread-current-pin');
 const threadNameEl = document.getElementById('thread-name');
 const threadMenuScrim = document.getElementById('thread-menu-scrim');
@@ -144,6 +145,7 @@ const REASONING_OVERRIDE_STORAGE_KEY = 'codexGo.reasoningOverrides.v1';
 const MODEL_OVERRIDE_STORAGE_KEY = 'codexGo.modelOverrides.v1';
 const APPEARANCE_SETTINGS_STORAGE_KEY = 'codexGo.appearanceSettings.v1';
 const SUPER_MODE_STORAGE_KEY = 'codexGo.superMode.v1';
+const PROGRESS_VISIBLE_STORAGE_KEY = 'codexGo.progressVisible.v1';
 const THEME_OPTIONS = ['native', 'workbench', 'minimal', 'dark', 'luxe-dark', 'dracula', 'graphite'];
 const THEME_ICON_VERSION = '20260608i';
 const THREAD_NOTICE_MAX_AGE_MS = 30 * 60 * 1000;
@@ -173,6 +175,7 @@ const ANDROID_APPEARANCE_DEFAULTS_STORAGE_KEY = 'codexGo.androidAppearanceDefaul
 let hasLocalAppearanceSettings = localStorage.getItem(APPEARANCE_SETTINGS_STORAGE_KEY) !== null;
 let appearanceSettings = readAppearanceSettings();
 let superModeEnabled = readSuperModeEnabled();
+let progressVisible = readProgressVisible();
 let localOnlyMode = true;
 let apiConfigRefreshBusy = false;
 let lastApiConfigRefreshAt = 0;
@@ -183,6 +186,7 @@ document.body.classList.toggle('standalone', isStandalone);
 ensureAndroidAppearanceDefaults();
 applyAppearanceSettings();
 applySuperModeSettings();
+applyProgressSettings();
 
 if (queryToken) {
   document.cookie = `codexGoToken=${encodeURIComponent(queryToken)}; Path=/; SameSite=Lax; Max-Age=31536000`;
@@ -1011,6 +1015,12 @@ function readSuperModeEnabled() {
 function persistSuperModeEnabled() {
   try { localStorage.setItem(SUPER_MODE_STORAGE_KEY, superModeEnabled ? '1' : '0'); } catch {}
 }
+function readProgressVisible() {
+  try { return localStorage.getItem(PROGRESS_VISIBLE_STORAGE_KEY) !== '0'; } catch { return true; }
+}
+function persistProgressVisible() {
+  try { localStorage.setItem(PROGRESS_VISIBLE_STORAGE_KEY, progressVisible ? '1' : '0'); } catch {}
+}
 function setSwitchState(button, on, disabled = false) {
   if (!button) return;
   button.classList.toggle('is-on', Boolean(on));
@@ -1020,11 +1030,31 @@ function setSwitchState(button, on, disabled = false) {
 function applySuperModeSettings() {
   setSwitchState(settingSuperModeSwitch, superModeEnabled);
 }
+function applyProgressSettings() {
+  setSwitchState(settingProgressSwitch, progressVisible);
+  document.body.classList.toggle('progress-hidden', !progressVisible);
+  document.querySelectorAll('details.process').forEach(details => {
+    const items = [...details.querySelectorAll('li')];
+    items.forEach(item => {
+      if (!item.dataset.kind && item.textContent.replace(/\s+/g, ' ').trim().startsWith('进度：')) {
+        item.dataset.kind = 'commentary';
+      }
+    });
+    details.classList.toggle('is-progress-only', items.length > 0 && items.every(item => item.dataset.kind === 'commentary'));
+  });
+}
 function toggleSuperMode() {
   superModeEnabled = !superModeEnabled;
   persistSuperModeEnabled();
   applySuperModeSettings();
   setNotice(superModeEnabled ? '超级模式已开启（纯心理加成）' : '已关闭超级模式', 'ok');
+}
+function toggleProgressVisible() {
+  progressVisible = !progressVisible;
+  persistProgressVisible();
+  applyProgressSettings();
+  rerenderActiveProcessSteps();
+  setNotice(progressVisible ? '进度已开启' : '进度已关闭', 'ok');
 }
 function toggleSettingsCard() {
   closeReasoningMenu();
@@ -1037,6 +1067,7 @@ function toggleSettingsCard() {
   if (willOpen) {
     renderThemeSelect();
     applySuperModeSettings();
+    applyProgressSettings();
     positionSettingsCard();
   }
 }
@@ -1287,6 +1318,13 @@ function scheduleThreadScrollToBottom(delays = [0, 32, 96, 220, 480, 800]) {
   }, releaseInstant));
 }
 
+function shouldStickThreadToBottomOnResize() {
+  if (Date.now() >= threadStickToBottomUntil) return false;
+  if (document.body.classList.contains('keyboard-open')) return false;
+  if (usesComposerKeyboardOverlay() && (document.activeElement === textarea || keyboardFocusStartedAt)) return false;
+  return true;
+}
+
 function scrollBottom(options = {}) {
   if (options.instant) scrollThreadToBottom(true);
   else requestAnimationFrame(() => scrollThreadToBottom(false));
@@ -1385,6 +1423,16 @@ function setComposerStackMetrics(height, rect) {
   }
 }
 
+function keyboardAppHeight(layoutHeight, keyboardOpen, overlayBottom = 0) {
+  if (!keyboardOpen) return Math.max(1, layoutHeight);
+  const viewport = window.visualViewport;
+  const viewportHeight = Math.round(viewport?.height || 0);
+  const insetHeight = Math.max(1, layoutHeight - overlayBottom);
+  const candidates = [insetHeight];
+  if (viewportHeight > 0) candidates.push(viewportHeight);
+  return Math.max(1, Math.min(layoutHeight, ...candidates));
+}
+
 function resetDesktopViewportPlacement(layoutHeight) {
   document.body.classList.remove('keyboard-open');
   document.documentElement.style.setProperty('--app-top', '0px');
@@ -1408,8 +1456,8 @@ function updateComposerViewportPlacement() {
   const keyboardOpen = isMobileKeyboardLikelyOpen(focused, keyboardBottom);
   document.body.classList.toggle('keyboard-open', keyboardOpen);
   document.documentElement.style.setProperty('--app-top', '0px');
-  document.documentElement.style.setProperty('--app-height', `${Math.max(1, layoutHeight)}px`);
   const overlayBottom = keyboardOpen ? composerOverlayBottom(keyboardBottom) : 0;
+  document.documentElement.style.setProperty('--app-height', `${keyboardAppHeight(layoutHeight, keyboardOpen, overlayBottom)}px`);
   document.documentElement.style.setProperty('--keyboard-overlay-bottom', `${overlayBottom}px`);
   const stackHeight = measureComposerStackHeight();
   if (keyboardOpen) {
@@ -1452,10 +1500,6 @@ function shouldRearmFocusedTextarea(now) {
   return true;
 }
 
-function shouldUseNativeTextareaFocus(event, alreadyFocused) {
-  return Boolean(event && event.target === textarea && !alreadyFocused);
-}
-
 function prepareTextareaFocus(event) {
   const now = performance.now();
   const keyboardLikelyOpen = document.body.classList.contains('keyboard-open');
@@ -1470,11 +1514,6 @@ function prepareTextareaFocus(event) {
   }
   lastTextareaFocusPrepareAt = now;
   if (nativeTextareaEdit) {
-    return;
-  }
-  const nativeTextareaFocus = shouldUseNativeTextareaFocus(event, alreadyFocused);
-  if (nativeTextareaFocus) {
-    keyboardFocusStartedAt = now;
     return;
   }
   if (!keyboardFocusStartedAt || !alreadyFocused) keyboardFocusStartedAt = now;
@@ -1524,13 +1563,11 @@ function alignComposerForKeyboard() {
     return;
   }
   const keyboardOpen = applyViewportSize();
-  const openedNow = keyboardOpen && !keyboardOverlayOpen;
   keyboardOverlayOpen = keyboardOpen;
   if (keyboardAlignRaf) window.cancelAnimationFrame(keyboardAlignRaf);
   keyboardAlignRaf = requestAnimationFrame(() => {
     keyboardAlignRaf = 0;
     if (isAndroidKeyboardBrowser) keepLayoutViewportPinned();
-    if (openedNow) thread.scrollTop = thread.scrollHeight;
     if (keyboardOpen && document.activeElement === textarea) {
       keyboardComposerRevealDone = true;
     }
@@ -1937,9 +1974,19 @@ function latestUserCommandKind() {
   return commandKindForText(latest?.textContent || '');
 }
 
+function visibleProcessSteps(steps = []) {
+  const normalized = Array.isArray(steps) ? steps : [];
+  return progressVisible ? normalized : normalized.filter(step => step.kind !== 'commentary' && step.label !== '进度');
+}
+
+function processPlaceholder(steps = []) {
+  return Array.isArray(steps) && steps.length ? 'Codex 正在回复…' : '已发送，等待 Codex 开始回复…';
+}
+
 function stepMarkdown(steps = []) {
-  if (!steps.length) return '已发送，等待 Codex 开始回复…';
-  return steps.map(step => {
+  const visibleSteps = visibleProcessSteps(steps);
+  if (!visibleSteps.length) return processPlaceholder(steps);
+  return visibleSteps.map(step => {
     if (step.kind === 'tool') return `- **工具**：${step.text || ''}`;
     if (step.kind === 'permission') return `- **权限**：${step.text || '等待你在电脑端确认权限请求'}`;
     if (step.kind === 'commentary') return `- **进度**：${step.text || ''}`;
@@ -1952,7 +1999,10 @@ function stepMarkdown(steps = []) {
 }
 
 function renderProcessSteps(el, steps = []) {
-  if (!steps.length) return setMarkdown(el, '已发送，等待 Codex 开始回复…');
+  if (!el) return;
+  el._codexGoProcessSteps = Array.isArray(steps) ? steps : [];
+  const visibleSteps = visibleProcessSteps(steps);
+  if (!visibleSteps.length) return setMarkdown(el, processPlaceholder(steps));
   const previousRects = new Map();
   el.querySelectorAll('.process-tool[data-tool-key]').forEach(node => {
     previousRects.set(node.dataset.toolKey, node.getBoundingClientRect());
@@ -2009,7 +2059,7 @@ function renderProcessSteps(el, steps = []) {
     pendingToolGroup = [];
   };
 
-  for (const step of steps) {
+  for (const step of visibleSteps) {
     if (step.kind === 'tool') {
       pendingToolGroup.push(step);
       continue;
@@ -2053,6 +2103,14 @@ function renderProcessSteps(el, steps = []) {
       }, 260);
     });
   }
+}
+
+function rerenderActiveProcessSteps() {
+  if (!activeAssistant?.bubble || commandUi(activeAssistant.commandKind || '')) return;
+  const steps = activeAssistant.processSteps || activeAssistant.bubble._codexGoProcessSteps || [];
+  renderProcessSteps(activeAssistant.bubble, steps);
+  updatePermissionActions(activeAssistant, activeAssistant.permissionRequest || null, activeAssistant.permissionStatusData || {});
+  lastPreview = stepMarkdown(steps);
 }
 
 function fileToDataUrl(file) {
@@ -2531,6 +2589,8 @@ function permissionActionNotice(action) {
 
 function updatePermissionActions(message, request, statusData = {}) {
   if (!message?.bubble) return;
+  message.permissionRequest = request?.pending ? request : null;
+  message.permissionStatusData = statusData || {};
   let actions = message.bubble.querySelector('.permission-actions');
   const pending = Boolean(request && request.pending);
   if (!pending) {
@@ -2599,11 +2659,12 @@ function addDetails(message, steps = []) {
   const details = document.createElement('details');
   const summary = document.createElement('summary');
   const list = document.createElement('ul');
-  details.className = 'process';
+  details.className = `process${visibleProcessSteps(steps).length ? '' : ' is-progress-only'}`;
   list.className = 'steps';
   summary.textContent = '查看详细过程';
   for (const step of steps) {
     const li = document.createElement('li');
+    li.dataset.kind = step.kind || (step.label === '进度' ? 'commentary' : '');
     li.textContent = `${step.label || '事件'}：${step.text || ''}`;
     list.appendChild(li);
   }
@@ -3483,7 +3544,10 @@ async function resumeActiveThreadStatus(threadId, requestId = historyRequestId) 
   activeAssistant.runDurationText = durationText;
   updateComposerAction();
   if (resumeCommandUi) setMarkdown(activeAssistant.bubble, resumeCommandUi.pendingText);
-  else renderProcessSteps(activeAssistant.bubble, data.steps || []);
+  else {
+    activeAssistant.processSteps = data.steps || [];
+    renderProcessSteps(activeAssistant.bubble, activeAssistant.processSteps);
+  }
   updatePermissionActions(activeAssistant, data.permissionRequest || null, data);
   setTopStatus(data.status === 'permission_required' ? '等待权限' : resumeCommandUi ? resumeCommandUi.runningNotice(durationText) : `Codex 正在回复 · ${durationText}`);
   setNotice('已接上这个线程正在进行的回复状态', 'ok');
@@ -3715,6 +3779,7 @@ async function pollStatus(watch, generation = pollGeneration) {
       lastStatusSignature = codexStatusSignature(data);
       scheduleQueuedSendRefresh(0, { force: true });
     }
+    activeAssistant.processSteps = data.steps || [];
     setActiveRunStart(data.startedAt || watch.since || '', Date.now() - (Number(data.durationMs) || 0));
     const activeCommandUi = commandUi(activeAssistant.commandKind || '');
     if (data.status === 'complete' || data.status === 'error') {
@@ -4340,7 +4405,7 @@ function handleWindowResize() {
   alignComposerForKeyboard();
   positionThreadMenuCard();
   positionSettingsCard();
-  if (Date.now() < threadStickToBottomUntil && !document.body.classList.contains('keyboard-open')) {
+  if (shouldStickThreadToBottomOnResize()) {
     scrollThreadToBottom(true);
   }
 }
@@ -4491,6 +4556,7 @@ wireInstantActionButton(threadRenameCancel, cancelThreadRename);
 wireInstantActionButton(threadRenameSave, renameCurrentThread);
 wireInstantActionButton(contextQuickCompact, sendContextCompactCommand);
 wireInstantActionButton(settingSuperModeSwitch, toggleSuperMode);
+wireInstantActionButton(settingProgressSwitch, toggleProgressVisible);
 let renameKeyboardSubmitAt = 0;
 function submitRenameFromKeyboard(event) {
   if (event.cancelable) event.preventDefault();

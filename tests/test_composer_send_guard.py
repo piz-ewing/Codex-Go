@@ -15,6 +15,7 @@ class ComposerSendGuardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.html = (ROOT / "public" / "index.html").read_text(encoding="utf-8")
+        cls.app_css = (ROOT / "public" / "css" / "app.css").read_text(encoding="utf-8")
         cls.app_js = (ROOT / "public" / "js" / "app.js").read_text(encoding="utf-8")
 
     def assert_matches(self, pattern: str, message: str) -> None:
@@ -79,24 +80,79 @@ class ComposerSendGuardTest(unittest.TestCase):
         self.assertIn("return layoutHeight - viewportHeight > 20 || layoutViewportBaselineHeight - viewportHeight > 20;", body)
         self.assertNotIn("keyboardFocusStartedAt", body, "focus grace must not mark the keyboard open before viewport evidence")
 
-    def test_direct_textarea_tap_uses_native_focus(self) -> None:
-        self.assertIn("function shouldUseNativeTextareaFocus(event, alreadyFocused) {", self.app_js)
-        self.assert_matches(
-            r"return Boolean\(event && event\.target === textarea && !alreadyFocused\);",
-            "direct mobile textarea taps should be left to native browser focus",
+    def test_keyboard_open_shrinks_app_without_repinning_thread_container(self) -> None:
+        self.assertNotIn("--keyboard-stage-height", self.app_css)
+        self.assertNotIn("setKeyboardStageHeight", self.app_js)
+        self.assertIn("function keyboardAppHeight(layoutHeight, keyboardOpen, overlayBottom = 0) {", self.app_js)
+        self.assertIn("const viewportHeight = Math.round(viewport?.height || 0);", self.app_js)
+        self.assertIn("return Math.max(1, Math.min(layoutHeight, ...candidates));", self.app_js)
+        self.assertIn(
+            "document.documentElement.style.setProperty('--app-height', `${keyboardAppHeight(layoutHeight, keyboardOpen, overlayBottom)}px`);",
+            self.app_js,
         )
+        stage_match = re.search(
+            r"body\.mobile-keyboard-mode\.keyboard-open \.stage \{(?P<body>[\s\S]*?)\n\}",
+            self.app_css,
+        )
+        self.assertIsNotNone(stage_match, "keyboard-open stage rule should stay explicit")
+        stage_body = stage_match.group("body")
+        self.assertIn("grid-template-rows: minmax(0, 1fr) var(--composer-stack-height);", stage_body)
+        self.assertNotIn("height:", stage_body)
+        self.assertNotIn("max-height:", stage_body)
+        composer_match = re.search(
+            r"body\.mobile-keyboard-mode\.keyboard-open \.composer-stack \{(?P<body>[\s\S]*?)\n\}",
+            self.app_css,
+        )
+        self.assertIsNotNone(composer_match, "keyboard-open composer rule should stay explicit")
+        composer_body = composer_match.group("body")
+        self.assertNotIn("position: fixed", composer_body)
+        self.assertNotIn("bottom:", composer_body)
+
+    def test_keyboard_alignment_does_not_scroll_thread(self) -> None:
+        self.assertNotIn("thread.scrollTop = thread.scrollHeight", self.app_js)
+        match = re.search(
+            r"function alignComposerForKeyboard\(\) \{(?P<body>[\s\S]*?)\nfunction scheduleKeyboardAlignment",
+            self.app_js,
+        )
+        self.assertIsNotNone(match, "keyboard alignment should stay explicit")
+        body = match.group("body")
+        self.assertNotIn("thread.scrollTop", body)
+        self.assertNotIn("scrollThreadToBottom", body)
+        self.assertNotIn("restoreThreadScrollAnchor", body)
+        self.assertNotIn("captureThreadScrollAnchor", body)
+        self.assertIn("const keyboardOpen = applyViewportSize();", body)
+        self.assertIn("keyboardOverlayOpen = keyboardOpen;", body)
+
+    def test_keyboard_resize_does_not_reuse_bottom_stickiness(self) -> None:
+        match = re.search(
+            r"function shouldStickThreadToBottomOnResize\(\) \{(?P<body>[\s\S]*?)\n\}",
+            self.app_js,
+        )
+        self.assertIsNotNone(match, "resize bottom-stick guard should stay explicit")
+        body = match.group("body")
+        self.assertIn("if (Date.now() >= threadStickToBottomUntil) return false;", body)
+        self.assertIn("if (document.body.classList.contains('keyboard-open')) return false;", body)
+        self.assertIn("document.activeElement === textarea || keyboardFocusStartedAt", body)
+        self.assertRegex(
+            self.app_js,
+            r"function handleWindowResize\(\) \{[\s\S]*?if \(shouldStickThreadToBottomOnResize\(\)\) \{\s*scrollThreadToBottom\(true\);",
+        )
+
+    def test_first_textarea_tap_uses_prevent_scroll_focus(self) -> None:
+        self.assertNotIn("function shouldUseNativeTextareaFocus", self.app_js)
         match = re.search(
             r"function prepareTextareaFocus\(event\) \{(?P<body>[\s\S]*?)\n\}",
             self.app_js,
         )
         self.assertIsNotNone(match, "textarea focus preparation should stay explicit")
         body = match.group("body")
-        native_index = body.find("if (nativeTextareaFocus)")
         prevent_index = body.find("if (event && event.cancelable) event.preventDefault();")
         focus_index = body.find("textarea.focus({ preventScroll: true });")
-        self.assertGreaterEqual(native_index, 0, "prepareTextareaFocus should branch for native textarea focus")
-        self.assertGreater(prevent_index, native_index, "native textarea focus branch should run before preventDefault")
-        self.assertGreater(focus_index, native_index, "native textarea focus branch should run before programmatic focus")
+        edit_index = body.find("if (nativeTextareaEdit)")
+        self.assertGreaterEqual(edit_index, 0, "already-focused textarea edits should remain native")
+        self.assertGreater(prevent_index, edit_index, "new textarea focus should prevent native page scroll")
+        self.assertGreater(focus_index, prevent_index, "new textarea focus should use preventScroll")
+        self.assertNotIn("nativeTextareaFocus", body)
 
     def test_textarea_touchmove_is_left_to_native_handling(self) -> None:
         match = re.search(

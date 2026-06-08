@@ -1386,6 +1386,8 @@ details.process summary { cursor: pointer; color: var(--muted); user-select: non
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
+body.progress-hidden .steps li[data-kind="commentary"] { display: none; }
+body.progress-hidden details.process.is-progress-only { display: none; }
 
 .composer-shell {
   position: relative;
@@ -1405,10 +1407,6 @@ body.mobile-keyboard-mode.keyboard-open .thread {
   padding-bottom: 12px;
 }
 body.mobile-keyboard-mode.keyboard-open .composer-stack {
-  position: fixed;
-  left: var(--composer-overlay-left);
-  right: var(--composer-overlay-right);
-  bottom: var(--keyboard-overlay-bottom);
   z-index: 100;
   background: var(--stage-bg);
   border-top: 1px solid var(--line);
