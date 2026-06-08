@@ -144,7 +144,7 @@ const REASONING_OVERRIDE_STORAGE_KEY = 'codexGo.reasoningOverrides.v1';
 const MODEL_OVERRIDE_STORAGE_KEY = 'codexGo.modelOverrides.v1';
 const APPEARANCE_SETTINGS_STORAGE_KEY = 'codexGo.appearanceSettings.v1';
 const SUPER_MODE_STORAGE_KEY = 'codexGo.superMode.v1';
-const THEME_OPTIONS = ['native', 'workbench', 'minimal', 'dark', 'luxe-dark', 'dracula'];
+const THEME_OPTIONS = ['native', 'workbench', 'minimal', 'dark', 'luxe-dark', 'dracula', 'graphite'];
 const THEME_ICON_VERSION = '20260608i';
 const THREAD_NOTICE_MAX_AGE_MS = 30 * 60 * 1000;
 const THREAD_SPINNER_MS = 850;
@@ -952,7 +952,7 @@ function renderThemeSelect() {
   themeSelect.value = normalizeAppearanceSettings(appearanceSettings).theme;
 }
 function isDarkTheme(theme = appearanceSettings.theme) {
-  return theme === 'dark' || theme === 'luxe-dark' || theme === 'dracula';
+  return theme === 'dark' || theme === 'luxe-dark' || theme === 'dracula' || theme === 'graphite';
 }
 function themeIconBase(theme = appearanceSettings.theme) {
   return isDarkTheme(theme) ? 'icons/dark' : 'icons';
@@ -982,6 +982,7 @@ function applyAppearanceSettings() {
     dark: '#141413',
     'luxe-dark': '#050506',
     dracula: '#282a36',
+    graphite: '#0b0d0e',
   };
   const themeColor = themeColorByName[appearanceSettings.theme] || themeColorByName.dracula;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
@@ -994,6 +995,7 @@ function themeDisplayName(theme) {
   if (theme === 'dark') return '暗色';
   if (theme === 'luxe-dark') return '流光';
   if (theme === 'dracula') return 'Dracula';
+  if (theme === 'graphite') return '墨岩';
   return '本机';
 }
 function setAppearanceTheme(theme) {

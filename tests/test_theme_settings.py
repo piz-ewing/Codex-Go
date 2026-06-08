@@ -29,12 +29,12 @@ class ThemeSettingsTest(unittest.TestCase):
         return match.group("body")
 
     def test_theme_dropdown_exposes_all_theme_options(self) -> None:
-        for value in ("native", "workbench", "minimal", "dark", "luxe-dark", "dracula"):
+        for value in ("native", "workbench", "minimal", "dark", "luxe-dark", "dracula", "graphite"):
             self.assertIn(f'<option value="{value}">', self.html)
-        self.assertIn("const THEME_OPTIONS = ['native', 'workbench', 'minimal', 'dark', 'luxe-dark', 'dracula'];", self.app_js)
+        self.assertIn("const THEME_OPTIONS = ['native', 'workbench', 'minimal', 'dark', 'luxe-dark', 'dracula', 'graphite'];", self.app_js)
 
     def test_theme_styles_are_loaded_from_independent_css_files(self) -> None:
-        expected = ("native", "workbench", "minimal", "dark", "luxe-dark", "dracula")
+        expected = ("native", "workbench", "minimal", "dark", "luxe-dark", "dracula", "graphite")
         for theme in expected:
             self.assertIn(f'href="css/themes/{theme}.css?', self.html)
             self.assertIn(theme, self.theme_css, f"missing theme css file for {theme}")
@@ -43,6 +43,7 @@ class ThemeSettingsTest(unittest.TestCase):
         self.assertNotIn("body.theme-dark", self.base_css)
         self.assertNotIn("body.theme-luxe-dark", self.base_css)
         self.assertNotIn("body.theme-dracula", self.base_css)
+        self.assertNotIn("body.theme-graphite", self.base_css)
 
     def test_local_theme_preference_wins_over_api_config_defaults(self) -> None:
         body = self.load_api_config_body()
@@ -79,8 +80,34 @@ class ThemeSettingsTest(unittest.TestCase):
         self.assertIn("color: #8be9fd;", dracula_css)
         self.assertIn("background: #bd93f9;", dracula_css)
 
+    def test_graphite_theme_adds_composed_dark_palette(self) -> None:
+        graphite_css = self.theme_css["graphite"]
+        self.assertIn("--bg: #0b0d0e;", graphite_css)
+        self.assertIn("--graphite-action-bg: linear-gradient(135deg, #73f3dc, #77b7ff);", graphite_css)
+        self.assertIn("body.theme-graphite .message.guided-send-note .bubble", graphite_css)
+        self.assertIn("body.theme-graphite .context-status.level-critical", graphite_css)
+        self.assertRegex(
+            graphite_css,
+            r"body\.theme-graphite \.context-ring \{[\s\S]*?width: 30px;[\s\S]*?border-radius: 9px;[\s\S]*?overflow: hidden;",
+        )
+        self.assertRegex(
+            graphite_css,
+            r"body\.theme-graphite \.context-ring::before \{[\s\S]*?inset: 4px;[\s\S]*?conic-gradient\(from -90deg",
+        )
+        self.assertRegex(
+            graphite_css,
+            r"body\.theme-graphite \.context-ring::after \{[\s\S]*?inset: 9px;[\s\S]*?background: var\(--stage-bg\);",
+        )
+        self.assertNotIn("transparent var(--context-progress)", graphite_css)
+        self.assertNotIn("context-pie-svg", self.base_css)
+        self.assertNotIn("context-pie-svg", graphite_css)
+        self.assertNotIn("contextPieFillMarkup", self.app_js)
+        self.assertIn("--context-graphite-track: #141a1d;", graphite_css)
+        self.assertIn("--context-graphite-fill-track: #273033;", graphite_css)
+        self.assertNotIn("linear-gradient(135deg, rgba(94,234,212,.22)", graphite_css)
+
     def test_dark_themes_style_attachment_chips(self) -> None:
-        for theme in ("dark", "luxe-dark", "dracula"):
+        for theme in ("dark", "luxe-dark", "dracula", "graphite"):
             css = self.theme_css[theme]
             self.assertIn(f"body.theme-{theme} .attachment-chip", css)
             self.assertNotIn("background: #eeeeea;", css)
@@ -92,7 +119,7 @@ class ThemeSettingsTest(unittest.TestCase):
         self.assertIn("--color-flow-tint-a: color(display-p3 .67 .90 .82);", luxe_css)
 
     def test_dark_theme_icon_paths_survive_theme_css_split(self) -> None:
-        for theme in ("dark", "luxe-dark", "dracula"):
+        for theme in ("dark", "luxe-dark", "dracula", "graphite"):
             css = self.theme_css[theme]
             self.assertIn('url("../../icons/dark/icon-32.png', css)
             self.assertNotIn('url("../icons/dark/icon-32.png', css)
