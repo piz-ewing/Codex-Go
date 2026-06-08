@@ -1288,6 +1288,11 @@ body.dot-flashing .title-dot {
   line-height: 1.35;
 }
 .process-error { color: #ff9a9a; }
+.process-commentary {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
 .process-thinking {
   color: var(--text);
   font-size: 15px;

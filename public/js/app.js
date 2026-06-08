@@ -1940,6 +1940,7 @@ function stepMarkdown(steps = []) {
   return steps.map(step => {
     if (step.kind === 'tool') return `- **工具**：${step.text || ''}`;
     if (step.kind === 'permission') return `- **权限**：${step.text || '等待你在电脑端确认权限请求'}`;
+    if (step.kind === 'commentary') return `- **进度**：${step.text || ''}`;
     if (step.kind === 'thinking') return step.text || '正在分析请求';
     if (step.kind === 'start') return `- **开始**：${step.text || '开始处理'}`;
     if (step.kind === 'complete') return `- **完成**：${step.text || '回复完成'}`;
@@ -2019,6 +2020,11 @@ function renderProcessSteps(el, steps = []) {
       item.className = 'process-thinking markdown-body';
       const body = document.createElement('div');
       body.innerHTML = markdownToHtml(step.text || '正在分析请求');
+      item.append(body);
+    } else if (step.kind === 'commentary') {
+      item.className = 'process-commentary markdown-body';
+      const body = document.createElement('div');
+      body.innerHTML = markdownToHtml(step.text || '');
       item.append(body);
     } else if (step.kind === 'permission') {
       item.className = `process-permission${step.pending === false ? ' is-resolved' : ''}`;
@@ -2562,11 +2568,12 @@ function addDetails(message, steps = []) {
 function captureVisibleProcessSteps(message) {
   if (!message?.bubble) return [];
   const steps = [];
-  for (const node of [...message.bubble.querySelectorAll('.process-start, .process-complete, .process-error, .process-thinking, .process-tool, .process-permission')]) {
+  for (const node of [...message.bubble.querySelectorAll('.process-start, .process-complete, .process-error, .process-commentary, .process-thinking, .process-tool, .process-permission')]) {
     const text = node.textContent.replace(/\s+/g, ' ').trim();
     if (!text) continue;
     let label = '过程';
     if (node.classList.contains('process-thinking')) label = '思考';
+    else if (node.classList.contains('process-commentary')) label = '进度';
     else if (node.classList.contains('process-tool')) label = '工具';
     else if (node.classList.contains('process-permission')) label = '权限';
     else if (node.classList.contains('process-start')) label = '开始';

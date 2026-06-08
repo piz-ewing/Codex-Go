@@ -246,6 +246,89 @@ class PermissionStatusTest(unittest.TestCase):
         self.assertEqual(response["permissionRequest"]["subject"], "browser")
         self.assertIn("是否使用浏览器", response["permissionRequest"]["justification"])
 
+    def test_commentary_agent_message_is_rendered_as_progress_step_once(self) -> None:
+        message = "收到，我直接读你贴的文本，重点看 cc-switch 是在哪一层拿到 reasoning。"
+        write_jsonl(
+            self.session_path,
+            [
+                {
+                    "timestamp": "2026-06-07T10:00:00.000Z",
+                    "type": "session_meta",
+                    "payload": {
+                        "id": THREAD_ID,
+                        "cwd": str(self.repo_root),
+                        "model": "gpt-5.5",
+                    },
+                },
+                {
+                    "timestamp": "2026-06-07T10:00:01.000Z",
+                    "type": "event_msg",
+                    "payload": {"type": "task_started", "turn_id": "turn-commentary"},
+                },
+                {
+                    "timestamp": "2026-06-07T10:00:02.000Z",
+                    "type": "event_msg",
+                    "payload": {"type": "agent_message", "message": message, "phase": "commentary"},
+                },
+                {
+                    "timestamp": "2026-06-07T10:00:02.000Z",
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "phase": "commentary",
+                        "content": [{"type": "output_text", "text": message}],
+                    },
+                },
+            ],
+        )
+        response = parse_status(self.settings, thread_id=THREAD_ID)
+        thinking_steps = [step for step in response["steps"] if step["kind"] == "thinking"]
+        commentary_steps = [step for step in response["steps"] if step["kind"] == "commentary"]
+        self.assertEqual(thinking_steps, [])
+        self.assertEqual(len(commentary_steps), 1)
+        self.assertEqual(commentary_steps[0]["label"], "进度")
+        self.assertIn(message, commentary_steps[0]["text"])
+        self.assertIn(message, response["preview"])
+
+    def test_commentary_response_item_message_is_rendered_as_progress_step(self) -> None:
+        message = "我先看一下 cc-switch 的 session 读取逻辑。"
+        write_jsonl(
+            self.session_path,
+            [
+                {
+                    "timestamp": "2026-06-07T10:00:00.000Z",
+                    "type": "session_meta",
+                    "payload": {
+                        "id": THREAD_ID,
+                        "cwd": str(self.repo_root),
+                        "model": "gpt-5.5",
+                    },
+                },
+                {
+                    "timestamp": "2026-06-07T10:00:01.000Z",
+                    "type": "event_msg",
+                    "payload": {"type": "task_started", "turn_id": "turn-commentary"},
+                },
+                {
+                    "timestamp": "2026-06-07T10:00:02.000Z",
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "phase": "commentary",
+                        "content": [{"type": "output_text", "text": message}],
+                    },
+                },
+            ],
+        )
+        response = parse_status(self.settings, thread_id=THREAD_ID)
+        thinking_steps = [step for step in response["steps"] if step["kind"] == "thinking"]
+        commentary_steps = [step for step in response["steps"] if step["kind"] == "commentary"]
+        self.assertEqual(thinking_steps, [])
+        self.assertEqual(len(commentary_steps), 1)
+        self.assertIn(message, commentary_steps[0]["text"])
+
 
 if __name__ == "__main__":
     unittest.main()

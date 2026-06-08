@@ -210,6 +210,10 @@ def step_from_event(item: dict[str, Any]) -> dict[str, Any] | None:
             return {"kind": "start", "label": "开始", "text": "Codex 开始处理请求。", "time": timestamp}
         if payload.get("type") == "task_complete":
             return {"kind": "complete", "label": "完成", "text": "Codex 已完成。", "time": timestamp}
+        if payload.get("type") == "agent_message" and payload.get("phase") == "commentary":
+            text = normalize_history_text(payload.get("message") or "")
+            if text:
+                return {"kind": "commentary", "label": "进度", "text": truncate_text(text, 1200), "time": timestamp}
         if is_terminal_failure_payload(payload):
             return {"kind": "error", "label": "失败", "text": truncate_text(extract_failure_text(payload) or "Codex 运行失败。"), "time": timestamp}
     if item.get("type") == "response_item":
@@ -221,6 +225,8 @@ def step_from_event(item: dict[str, Any]) -> dict[str, Any] | None:
         if payload.get("type") == "message":
             text = extract_message_text(payload.get("content"))
             if text and payload.get("role") == "assistant":
+                if payload.get("phase") == "commentary":
+                    return {"kind": "commentary", "label": "进度", "text": truncate_text(text, 1200), "time": timestamp}
                 return {
                     "kind": "final" if payload.get("phase") == "final_answer" else "assistant",
                     "label": "回复",
@@ -331,6 +337,8 @@ def parse_status(settings: Settings, **options: Any) -> dict[str, Any]:
     turn_id = ""
     failure_text = ""
     steps: list[dict[str, Any]] = []
+    commentary_texts_seen: set[str] = set()
+    thinking_texts_seen: set[str] = set()
     permission_requests: dict[str, dict[str, Any]] = {}
     tool_calls: dict[str, dict[str, Any]] = {}
 
@@ -367,7 +375,7 @@ def parse_status(settings: Settings, **options: Any) -> dict[str, Any]:
         step = step_from_event(item)
         if not step:
             continue
-        if step.get("kind") in {"assistant", "final"} and step.get("text"):
+        if step.get("kind") in {"assistant", "final", "thinking", "commentary"} and step.get("text"):
             preview = step["text"]
         if step.get("kind") == "final" and step.get("text"):
             final = step["text"]
@@ -376,7 +384,17 @@ def parse_status(settings: Settings, **options: Any) -> dict[str, Any]:
             permission_requests[step["callId"]] = req
         if step.get("kind") == "tool" and step.get("callId"):
             tool_calls[step["callId"]] = payload
-        if step.get("kind") in {"start", "thinking", "tool", "permission", "complete", "error"}:
+        if step.get("kind") in {"start", "commentary", "thinking", "tool", "permission", "complete", "error"}:
+            if step.get("kind") == "commentary":
+                commentary_text = normalize_history_text(step.get("text") or "")
+                if commentary_text in commentary_texts_seen:
+                    continue
+                commentary_texts_seen.add(commentary_text)
+            if step.get("kind") == "thinking":
+                thinking_text = normalize_history_text(step.get("text") or "")
+                if thinking_text in thinking_texts_seen:
+                    continue
+                thinking_texts_seen.add(thinking_text)
             steps.append(step)
 
     pending_permission = next((req for req in permission_requests.values() if req.get("pending")), None)
