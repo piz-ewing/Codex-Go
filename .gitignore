@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+
+# Logs and temp
+*.log
+logs/
+tmp-*
+
+# Xcode (legacy macOS wrapper under macos/)
+macos/**/DerivedData/
+macos/**/*.xcresult

@@ -1,0 +1,191 @@
+/* Minimal theme
+   Theme-only styling for Codex Go. Keep layout primitives in ../app.css. */
+
+body.theme-minimal {
+  --bg: #f7f7f4;
+  --topbar-bg: #f7f7f4;
+  --stage-bg: #fdfdfb;
+  --panel-2: #f1f1ee;
+  --text: #1d1d1b;
+  --muted: #6d6d66;
+  --faint: #999991;
+  --line: rgba(29,29,27,.10);
+  --border-soft: rgba(29,29,27,.12);
+  --border-strong: rgba(29,29,27,.22);
+  --shadow-soft: none;
+  --shadow-lift: 0 12px 32px rgba(29,29,27,.10);
+  --user: #ecece8;
+  --accent: #1d1d1b;
+  --ok: #247257;
+  --keyboard-gap-bg: #f7f7f4;
+  --dot-core: #247257;
+  --dot-glow-soft: transparent;
+}
+
+body.theme-minimal,
+body.theme-minimal .app {
+  background: var(--bg);
+}
+
+body.theme-minimal .topbar {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.theme-minimal .thread-button-icon,
+body.theme-minimal .title-dot,
+body.theme-minimal .new-thread-btn,
+body.theme-minimal .settings-btn,
+body.theme-minimal .reasoning-badge,
+body.theme-minimal .model-badge,
+body.theme-minimal .stage,
+body.theme-minimal .message.assistant .bubble,
+body.theme-minimal .message.user .bubble,
+body.theme-minimal .composer,
+body.theme-minimal .queued-send-bar,
+body.theme-minimal .thread-menu {
+  box-shadow: none;
+}
+
+body.theme-minimal .new-thread-btn,
+body.theme-minimal .settings-btn,
+body.theme-minimal .reasoning-badge,
+body.theme-minimal .model-badge {
+  background: transparent;
+}
+
+body.theme-minimal .stage {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+body.theme-minimal .thread {
+  background: var(--stage-bg);
+}
+
+body.theme-minimal .day-note {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.theme-minimal .message.assistant .bubble {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.theme-minimal .message.user .bubble {
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: var(--user);
+}
+
+body.theme-minimal .message.pending .bubble {
+  border-color: transparent;
+}
+
+body.theme-minimal .composer-stack,
+body.theme-minimal .control-dock,
+body.theme-minimal .composer-shell {
+  background: var(--stage-bg);
+}
+
+body.theme-minimal .context-status {
+  --context-color: #6d6d66;
+  gap: 6px;
+  color: var(--text);
+}
+
+body.theme-minimal .context-ring {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: conic-gradient(from -90deg, var(--context-color) var(--context-progress), rgba(29,29,27,.13) 0);
+  box-shadow: inset 0 0 0 1px rgba(29,29,27,.10);
+}
+
+body.theme-minimal .context-ring::after {
+  content: "";
+  inset: 5px;
+  border-radius: 999px;
+  background: var(--stage-bg);
+  box-shadow: inset 0 0 0 1px rgba(29,29,27,.08);
+}
+
+body.theme-minimal .context-text {
+  border: 0;
+  padding-inline: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+body.theme-minimal .context-percent {
+  color: var(--text);
+}
+
+body.theme-minimal .context-used {
+  color: var(--muted);
+}
+
+body.theme-minimal .context-status.is-unknown .context-ring {
+  background: conic-gradient(from -90deg, rgba(29,29,27,.22) 0deg, rgba(29,29,27,.10) 0) !important;
+  box-shadow: none !important;
+}
+
+body.theme-minimal .composer {
+  background: #ffffff;
+}
+
+body.theme-minimal .icon-btn {
+  color: var(--muted);
+  background: #f4f4f1;
+}
+
+body.theme-minimal .send-btn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+body.theme-minimal .thread-option[aria-current="true"],
+body.theme-minimal .pinned-thread-option[aria-current="true"] {
+  background: #f0f3f1;
+  box-shadow: inset 2px 0 0 var(--ok);
+}
+
+@media (min-width: 900px) and (min-height: 650px) {
+  body.theme-minimal .stage {
+    margin: 0;
+    box-shadow: none;
+    border-left: 1px solid var(--line);
+  }
+}
+
+body.theme-minimal .context-quick-card {
+  border: 1px solid rgba(29,29,27,.12);
+  background: #ffffff;
+  color: #1d1d1b;
+  box-shadow: var(--shadow-lift);
+}
+
+body.theme-minimal .context-quick-card:active {
+  background: #f5f5f2;
+}
+
+@media (max-width: 700px) {
+  body.theme-minimal .stage,
+  body.theme-minimal .composer {
+    border-radius: 0;
+  }
+
+  body.theme-minimal .message.assistant .bubble {
+    padding: 0;
+  }
+}

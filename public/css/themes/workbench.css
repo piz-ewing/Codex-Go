@@ -1,0 +1,182 @@
+/* Workbench theme
+   Theme-only styling for Codex Go. Keep layout primitives in ../app.css. */
+
+body.theme-workbench {
+  --bg: #edf2f1;
+  --topbar-bg: #edf2f1;
+  --stage-bg: #fbfcfb;
+  --panel-2: #eef4f2;
+  --text: #18211f;
+  --muted: #64736f;
+  --faint: #8a9994;
+  --line: rgba(24,33,31,.10);
+  --border-soft: rgba(24,33,31,.12);
+  --border-strong: rgba(24,33,31,.20);
+  --shadow-soft: 0 12px 34px rgba(26,47,43,.10);
+  --shadow-lift: 0 20px 56px rgba(26,47,43,.16);
+  --user: #203b34;
+  --accent: #176b57;
+  --ok: #167a5b;
+  --keyboard-gap-bg: #edf2f1;
+  --dot-core: #176b57;
+  --dot-glow-soft: rgba(23,107,87,.22);
+}
+
+body.theme-workbench,
+body.theme-workbench .app {
+  background: linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,0) 34%), var(--bg);
+}
+
+body.theme-workbench .topbar {
+  background: rgba(237,242,241,.94);
+}
+
+body.theme-workbench .title-dot {
+  box-shadow: 0 0 0 3px rgba(23,107,87,.10), 0 0 12px var(--dot-glow-soft);
+}
+
+body.theme-workbench .new-thread-btn,
+body.theme-workbench .settings-btn,
+body.theme-workbench .reasoning-badge,
+body.theme-workbench .model-badge {
+  color: #43524f;
+}
+
+body.theme-workbench .reasoning-badge.mode-medium,
+body.theme-workbench .model-badge.is-local,
+body.theme-workbench .model-badge.is-official {
+  color: #176b57;
+  border-color: rgba(23,107,87,.24);
+  background: rgba(232,246,241,.94);
+}
+
+body.theme-workbench .thread {
+  background:
+    linear-gradient(rgba(24,33,31,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24,33,31,.018) 1px, transparent 1px),
+    var(--stage-bg);
+  background-size: 100% 36px, 36px 100%, auto;
+}
+
+body.theme-workbench .day-note {
+  padding: 4px 10px;
+  border: 1px solid rgba(24,33,31,.07);
+  border-radius: 999px;
+  background: rgba(255,255,255,.68);
+  color: #879691;
+}
+
+body.theme-workbench .message.assistant .bubble {
+  border-left: 3px solid rgba(23,107,87,.36);
+  box-shadow: 0 9px 22px rgba(26,47,43,.065);
+}
+
+body.theme-workbench .message.pending .bubble {
+  border-left-color: rgba(121,94,43,.38);
+}
+
+body.theme-workbench .markdown-body code {
+  background: rgba(23,107,87,.075);
+  color: #1f4c42;
+}
+
+body.theme-workbench .markdown-body pre {
+  background: #f3f7f5;
+  color: #1f2b28;
+}
+
+body.theme-workbench .composer-stack {
+  background: linear-gradient(180deg, rgba(251,252,251,0), rgba(251,252,251,.96) 20%);
+}
+
+body.theme-workbench .control-dock {
+  background: rgba(246,249,248,.88);
+}
+
+body.theme-workbench .context-status {
+  --context-color: #176b57;
+}
+
+body.theme-workbench .context-text {
+  border-color: rgba(23,107,87,.16);
+  background: rgba(255,255,255,.78);
+  color: #24483f;
+}
+
+body.theme-workbench .context-ring {
+  width: calc(var(--top-control-size) - 2px);
+  height: calc(var(--top-control-size) - 2px);
+  border-radius: var(--box-radius);
+  background: conic-gradient(var(--context-color) var(--context-progress), rgba(23,107,87,.14) 0);
+  box-shadow: 0 0 0 2px rgba(23,107,87,.08), inset 0 0 0 1px rgba(23,107,87,.08);
+}
+
+body.theme-workbench .context-ring::after {
+  content: "";
+  inset: 4px;
+  border-radius: calc(var(--box-radius) - 3px);
+  background: #fbfcfb;
+}
+
+body.theme-workbench .context-status.is-unknown .context-ring {
+  background: conic-gradient(#8a9994 0deg, rgba(23,107,87,.12) 0) !important;
+  box-shadow: 0 0 0 2px rgba(23,107,87,.06), inset 0 0 0 1px rgba(23,107,87,.07) !important;
+}
+
+body.theme-workbench .icon-btn {
+  background: #e8f6f1;
+  color: #176b57;
+}
+
+body.theme-workbench .send-btn,
+body.theme-workbench .permission-action-btn.is-primary,
+body.theme-workbench .thread-rename-actions .save,
+body.theme-workbench .queued-send-action.is-primary {
+  border-color: #176b57;
+  background: #176b57;
+}
+
+body.theme-workbench .send-btn {
+  box-shadow: 0 9px 18px rgba(23,107,87,.20), inset 0 1px 0 rgba(255,255,255,.20);
+}
+
+body.theme-workbench .settings-switch.is-on {
+  background: #176b57;
+}
+
+body.theme-workbench .thread-option[aria-current="true"],
+body.theme-workbench .pinned-thread-option[aria-current="true"] {
+  background: #e8f6f1;
+  color: #123d34;
+  box-shadow: inset 3px 0 0 #176b57;
+}
+
+body.theme-workbench .thread-title-pin,
+body.theme-workbench .thread-current-pin,
+body.theme-workbench .project-header.is-current,
+body.theme-workbench .project-header.is-current .project-folder {
+  color: #176b57;
+}
+
+body.theme-workbench .thread-option-dot {
+  background: #176b57;
+  box-shadow: 0 0 0 3px rgba(23,107,87,.10), 0 0 10px rgba(23,107,87,.22);
+}
+
+body.theme-workbench .context-quick-card {
+  border: 1px solid rgba(24,33,31,.12);
+  background: #ffffff;
+  color: #18211f;
+  box-shadow: var(--shadow-soft);
+}
+
+body.theme-workbench .context-quick-card:active {
+  background: #f4f8f7;
+}
+
+@media (min-width: 900px) and (min-height: 650px) {
+  body.theme-workbench .stage {
+    margin: 0;
+    box-shadow: none;
+  }
+}

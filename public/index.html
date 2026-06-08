@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#282a36" />
+  <meta name="application-name" content="Codex Go" />
+  <meta name="apple-mobile-web-app-title" content="Codex Go" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png?v=20260608i" />
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png?v=20260608i" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=20260608i" />
+  <title>Codex Go</title>
+  <link rel="stylesheet" href="css/app.css?v=20260608m" />
+  <link rel="stylesheet" href="css/themes/native.css?v=20260609b" />
+  <link rel="stylesheet" href="css/themes/workbench.css?v=20260609b" />
+  <link rel="stylesheet" href="css/themes/minimal.css?v=20260609b" />
+  <link rel="stylesheet" href="css/themes/dark.css?v=20260609b" />
+  <link rel="stylesheet" href="css/themes/luxe-dark.css?v=20260609b" />
+  <link rel="stylesheet" href="css/themes/dracula.css?v=20260609b" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="thread-button" id="thread-button" type="button" aria-label="打开会话列表">
+        <span class="thread-button-icon" aria-hidden="true"></span>
+        <span class="title-dot"></span>
+        <span class="thread-current-pin" id="thread-current-pin" aria-hidden="true"></span>
+        <span class="thread-name" id="thread-name">选择线程</span>
+      </button>
+      <button class="new-thread-btn" id="new-thread" type="button" title="新建线程" aria-label="新建线程">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
+      </button>
+    </header>
+
+    <div class="model-menu-card reasoning-menu-card" id="reasoning-menu-card" aria-label="选择推理模式"></div>
+    <div class="model-menu-card" id="model-menu-card" aria-label="选择模型"></div>
+    <div class="settings-card" id="settings-card" aria-label="Codex Go 设置">
+      <div class="settings-title"><span>设置</span></div>
+      <div class="settings-row settings-theme-row">
+        <div class="settings-row-text"><div class="settings-label">风格</div></div>
+        <select class="settings-select" id="theme-select" aria-label="界面风格">
+          <option value="native">本机</option>
+          <option value="workbench">工作台</option>
+          <option value="minimal">极简</option>
+          <option value="dark">暗色</option>
+          <option value="luxe-dark">流光</option>
+          <option value="dracula">Dracula</option>
+        </select>
+      </div>
+      <div class="settings-row" id="setting-super-mode-row">
+        <div class="settings-row-text"><div class="settings-label">超级模式</div></div>
+        <button class="settings-switch" id="setting-super-mode" type="button" role="switch" aria-label="超级模式"></button>
+      </div>
+    </div>
+    <button class="context-quick-card" id="context-quick-card" type="button" aria-label="发送压缩指令"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8"></path><path d="M6 7h12"></path><path d="M9 11h6"></path><path d="M12 15v6"></path><path d="m8 17 4 4 4-4"></path></svg><span>压缩</span></button>
+    <div class="thread-action-card" id="thread-action-card" aria-label="当前线程操作">
+      <div class="thread-action-buttons">
+        <button class="thread-action-button is-danger" id="thread-action-archive" type="button"><span class="action-icon" id="thread-action-archive-icon" aria-hidden="true"></span><span>归档</span></button>
+        <button class="thread-action-button" id="thread-action-rename" type="button"><span class="action-icon" id="thread-action-rename-icon" aria-hidden="true"></span><span>重命名</span></button>
+        <button class="thread-action-button is-blue" id="thread-action-pin-toggle" type="button"><span class="action-icon" id="thread-action-pin-toggle-icon" aria-hidden="true"></span><span id="thread-action-pin-toggle-text">置顶</span></button>
+      </div>
+      <div class="thread-rename-panel">
+        <input class="thread-rename-input" id="thread-rename-input" type="text" autocomplete="off" enterkeyhint="done" maxlength="120" />
+        <div class="thread-rename-actions">
+          <button type="button" id="thread-rename-cancel">取消</button>
+          <button class="save" type="button" id="thread-rename-save">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notice-pill" id="notice" role="status" aria-live="polite"></div>
+    <div class="thread-menu-scrim" id="thread-menu-scrim" aria-hidden="true"></div>
+    <aside class="thread-menu" id="thread-menu" aria-label="选择 Codex 线程"></aside>
+
+    <div class="stage">
+      <main class="thread" id="thread" aria-label="聊天记录">
+        <div class="day-note">手机同步到当前 Codex 对话</div>
+      </main>
+
+      <div class="composer-stack">
+        <nav class="control-dock" aria-label="运行控制">
+          <div class="context-status is-unknown" id="top-status" role="status" aria-live="polite" aria-label="当前上下文用量"><span class="context-ring" aria-hidden="true"></span><span class="context-text"><span class="context-percent">--</span><span class="context-sep">/</span><span class="context-used">--</span></span></div>
+          <button class="reasoning-badge is-unknown" id="reasoning-badge" type="button" title="当前推理模式" aria-label="当前推理模式"><span id="reasoning-text">--</span></button>
+          <button class="model-badge is-unknown" id="model-badge" type="button" title="当前模型" aria-label="当前模型"><span id="model-text">--</span></button>
+          <button class="settings-btn" id="settings" type="button" title="设置" aria-label="设置">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>设置</span>
+          </button>
+        </nav>
+
+        <footer class="composer-shell">
+          <div class="attachment-tray" id="attachment-tray" aria-label="待发送附件"></div>
+          <div class="queued-send-bar" id="queued-send" role="status" aria-live="polite">
+            <span class="queued-send-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20"><path d="M4.5 4.5v4.75c0 3 1.75 4.75 4.75 4.75h6.25"/><path d="M12.25 10.75 15.5 14l-3.25 3.25"/></svg>
+            </span>
+            <span class="queued-send-label" id="queued-send-label">待发送</span>
+            <div class="queued-send-list" id="queued-send-list"></div>
+          </div>
+          <form class="composer" id="composer">
+            <button class="icon-btn" id="attach" type="button" title="添加照片或附件" aria-label="添加照片或附件">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.44 11.05 12.2 20.29a6 6 0 0 1-8.49-8.49l9.24-9.24a4 4 0 0 1 5.66 5.66l-9.24 9.24a2 2 0 1 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <input class="file-input" id="file-input" type="file" multiple />
+            <textarea id="text" rows="1" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="发消息给 Codex Go"></textarea>
+            <button class="send-btn stop-btn composer-action-hidden" id="stop" type="button" title="取消当前 Codex 回复" aria-label="取消当前 Codex 回复" hidden><span class="stop-square" aria-hidden="true"></span></button>
+            <button class="send-btn" id="send" type="button" title="发送给 Codex Go" aria-label="发送给 Codex Go">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
+          </form>
+        </footer>
+      </div>
+    </div>
+  </div>
+  <script src="js/app.js?v=20260609a"></script>
+</body>
+</html>
