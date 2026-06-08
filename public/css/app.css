@@ -1587,6 +1587,10 @@ body.mobile-keyboard-mode.keyboard-open .control-dock {
   color: #f3f7ff;
   background: rgba(94,180,255,.20);
 }
+.queued-send-action.is-edit {
+  color: #d9f7ee;
+  background: rgba(82,217,177,.14);
+}
 .queued-send-action.is-danger {
   color: #ffb1b1;
   background: rgba(255,107,107,.12);

@@ -2159,6 +2159,22 @@ function queuedSendActionKey(action, text) {
   return `${action}:${String(text || '').slice(0, 180)}`;
 }
 
+function moveQueuedSendToComposer(text) {
+  const value = String(text || '');
+  if (!value.trim()) return;
+  textarea.value = value;
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  autosize();
+  updateComposerAction();
+  saveComposerDraftForKey();
+  textarea.focus({ preventScroll: true });
+  try {
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  } catch {
+    // Some mobile browsers can reject selection changes while focus is settling.
+  }
+}
+
 function queuedSendGuidedKey(threadId, text) {
   return `${threadId || ''}:${String(text || '').slice(0, 180)}`;
 }
@@ -2284,10 +2300,12 @@ function renderQueuedSends() {
     const text = document.createElement('span');
     const actions = document.createElement('div');
     const guide = document.createElement('button');
+    const edit = document.createElement('button');
     const remove = document.createElement('button');
     const sending = item.state === 'sending';
     const itemText = item.text || item.summary || '';
     const guideBusy = queuedSendActionBusyKey === queuedSendActionKey('guide', itemText);
+    const editBusy = queuedSendActionBusyKey === queuedSendActionKey('edit', itemText);
     const deleteBusy = queuedSendActionBusyKey === queuedSendActionKey('delete', itemText);
     row.className = 'queued-send-item';
     body.className = 'queued-send-body';
@@ -2308,6 +2326,18 @@ function renderQueuedSends() {
       if (guide.disabled) return;
       runQueuedSendAction('guide', itemText);
     });
+    edit.className = 'queued-send-action is-edit';
+    edit.type = 'button';
+    edit.textContent = editBusy ? '处理中' : '编辑';
+    edit.title = '删除这条排队消息，并放回输入框编辑';
+    edit.setAttribute('aria-label', edit.title);
+    edit.disabled = sending || Boolean(queuedSendActionBusyKey);
+    edit.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (edit.disabled) return;
+      runQueuedSendAction('edit', itemText);
+    });
     remove.className = 'queued-send-action is-danger';
     remove.type = 'button';
     remove.textContent = deleteBusy ? '处理中' : '删除';
@@ -2321,7 +2351,7 @@ function renderQueuedSends() {
       runQueuedSendAction('delete', itemText);
     });
     body.append(state, text);
-    actions.append(guide, remove);
+    actions.append(guide, edit, remove);
     row.append(body, actions);
     queuedSendList.appendChild(row);
   });
@@ -2406,14 +2436,22 @@ function scheduleQueuedSendRefresh(delayMs = 0, options = {}) {
 async function runQueuedSendAction(action, text) {
   if (!selectedThreadId || !text) return;
   queuedSendActionBusyKey = queuedSendActionKey(action, text);
+  const backendAction = action === 'edit' ? 'delete' : action;
   renderQueuedSends();
   setWorkingDot(true);
-  setNotice(action === 'delete' ? '正在删除 Codex 排队消息…' : '正在引导 Codex 排队消息…', 'ok');
+  setNotice(
+    action === 'edit'
+      ? '正在移回输入框…'
+      : action === 'delete'
+        ? '正在删除 Codex 排队消息…'
+        : '正在引导 Codex 排队消息…',
+    'ok',
+  );
   try {
     const response = await fetchApi('/codex/pending-send-action', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-codex-go-token': token },
-      body: JSON.stringify({ threadId: selectedThreadId, action, text }),
+      body: JSON.stringify({ threadId: selectedThreadId, action: backendAction, text }),
       apiTimeoutMs: 15000,
       routeSwitchQuiet: true,
       retryProbeTimeoutMs: 700,
@@ -2424,7 +2462,13 @@ async function runQueuedSendAction(action, text) {
       markQueuedSendGuided(text);
       appendGuidedSendNoteToThread(text);
     }
-    setNotice(data.message || (action === 'delete' ? '已删除 Codex 排队消息' : '已引导 Codex 排队消息'), 'ok');
+    if (action === 'edit') moveQueuedSendToComposer(text);
+    setNotice(
+      action === 'edit'
+        ? '已移回输入框，可继续编辑'
+        : data.message || (action === 'delete' ? '已删除 Codex 排队消息' : '已引导 Codex 排队消息'),
+      'ok',
+    );
   } catch (error) {
     setNotice(error.message || '排队消息操作失败', 'error');
   } finally {

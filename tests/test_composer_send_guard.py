@@ -155,6 +155,17 @@ class ComposerSendGuardTest(unittest.TestCase):
         )
         self.assertIn("data.permissionRequest?.callId || ''", self.app_js)
 
+    def test_queued_send_edit_deletes_and_moves_text_to_composer(self) -> None:
+        self.assertIn("function moveQueuedSendToComposer(text) {", self.app_js)
+        self.assertIn("textarea.value = value;", self.app_js)
+        self.assertIn("saveComposerDraftForKey();", self.app_js)
+        self.assertIn("const backendAction = action === 'edit' ? 'delete' : action;", self.app_js)
+        self.assertIn("if (action === 'edit') moveQueuedSendToComposer(text);", self.app_js)
+        self.assertIn("edit.textContent = editBusy ? '处理中' : '编辑';", self.app_js)
+        self.assertIn("runQueuedSendAction('edit', itemText);", self.app_js)
+        self.assertIn("actions.append(guide, edit, remove);", self.app_js)
+        self.assertNotIn("sendText({ text", self.app_js)
+
 
 if __name__ == "__main__":
     unittest.main()
