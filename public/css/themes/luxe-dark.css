@@ -250,6 +250,13 @@ body.theme-luxe-dark .queued-send-action.is-primary {
   min-width: 52px;
 }
 
+body.theme-luxe-dark .queued-send-action.is-edit {
+  border-color: rgba(142,240,183,.28);
+  background: linear-gradient(180deg, rgba(142,240,183,.14), rgba(87,189,139,.10));
+  color: #bff8d7;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+
 body.theme-luxe-dark .context-quick-card:active {
   background: var(--luxe-action-bg);
   color: var(--luxe-action-fg);

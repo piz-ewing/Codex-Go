@@ -136,6 +136,12 @@ body.theme-workbench .queued-send-action.is-primary {
   background: #176b57;
 }
 
+body.theme-workbench .queued-send-action.is-edit {
+  border-color: rgba(23,107,87,.22);
+  background: #dff2ec;
+  color: #176b57;
+}
+
 body.theme-workbench .send-btn {
   box-shadow: 0 9px 18px rgba(23,107,87,.20), inset 0 1px 0 rgba(255,255,255,.20);
 }

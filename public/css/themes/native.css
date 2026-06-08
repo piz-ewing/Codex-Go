@@ -422,6 +422,12 @@ body.theme-native .attachment-chip {
   box-shadow: none;
 }
 
+.queued-send-action.is-edit {
+  border-color: rgba(76,124,99,.22);
+  background: #edf8f1;
+  color: #3f725a;
+}
+
 .notice-pill,
 .model-menu-card,
 .settings-card,

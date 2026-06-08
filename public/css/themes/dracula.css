@@ -201,6 +201,12 @@ body.theme-dracula .send-btn {
   color: #282a36;
 }
 
+body.theme-dracula .queued-send-action.is-edit {
+  border-color: rgba(80,250,123,.24);
+  background: rgba(80,250,123,.12);
+  color: #50fa7b;
+}
+
 body.theme-dracula .permission-action-btn.is-danger,
 body.theme-dracula .queued-send-action.is-danger,
 body.theme-dracula .send-btn.stop-btn {

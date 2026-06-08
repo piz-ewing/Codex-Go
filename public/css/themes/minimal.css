@@ -154,6 +154,12 @@ body.theme-minimal .send-btn {
   color: #ffffff;
 }
 
+body.theme-minimal .queued-send-action.is-edit {
+  border-color: rgba(36,114,87,.20);
+  background: #eef6f2;
+  color: #247257;
+}
+
 body.theme-minimal .thread-option[aria-current="true"],
 body.theme-minimal .pinned-thread-option[aria-current="true"] {
   background: #f0f3f1;

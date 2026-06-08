@@ -112,6 +112,14 @@ class ThemeSettingsTest(unittest.TestCase):
             self.assertIn(f"body.theme-{theme} .attachment-chip", css)
             self.assertNotIn("background: #eeeeea;", css)
 
+    def test_all_themes_style_queued_send_edit_action(self) -> None:
+        self.assertIn(".queued-send-action.is-edit", self.base_css)
+        self.assertIn(".queued-send-action.is-edit", self.theme_css["native"])
+        for theme in ("workbench", "minimal", "dark", "luxe-dark", "dracula", "graphite"):
+            self.assertIn(f"body.theme-{theme} .queued-send-action.is-edit", self.theme_css[theme])
+        self.assertIn("background: linear-gradient(180deg, rgba(142,240,183,.14)", self.theme_css["luxe-dark"])
+        self.assertIn("color: #a8d6ff;", self.theme_css["graphite"])
+
     def test_luxe_dark_theme_restores_flowing_dark_style(self) -> None:
         luxe_css = self.theme_css["luxe-dark"]
         self.assertIn("body.theme-luxe-dark.color-flow-on .composer::before", luxe_css)
