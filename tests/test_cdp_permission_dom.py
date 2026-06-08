@@ -21,12 +21,13 @@ class CdpPermissionDomTest(unittest.TestCase):
         self.assertIn("apply (these )?(changes|edits|patch)", expression)
         self.assertIn("source: 'gui'", expression)
 
-    def test_permission_action_waits_for_enabled_submit_and_supports_apply(self) -> None:
+    def test_permission_action_allows_option_flow_without_enabled_submit(self) -> None:
         expression = permission_action_expression("allow", "", "是否应用这些更改？")
 
         self.assertIn("enabledSubmitNear", expression)
         self.assertIn("!isDisabled(submit.button)", expression)
-        self.assertIn("已选择权限选项，但提交按钮尚不可用", expression)
+        self.assertIn("resolvedWithoutSubmit: true", expression)
+        self.assertNotIn("已选择权限选项，但提交按钮尚不可用", expression)
         self.assertIn("应用.*(更改|修改|补丁)", expression)
         self.assertIn("apply.*(changes|edits|patch)", expression)
         self.assertIn("[role=\"radio\"]", expression)

@@ -987,6 +987,22 @@ def permission_action_expression(action: str, command: str = "", justification: 
         }}
         return null;
       }};
+      const nativeActivateOption = optionButton => {{
+        if (!(optionButton instanceof HTMLElement)) return false;
+        const control = optionButton.control || optionButton.querySelector?.('input,[role="radio"],[role="checkbox"]') || null;
+        const isSelected = control && (
+          control.checked === true ||
+          control.getAttribute?.('aria-checked') === 'true' ||
+          control.getAttribute?.('data-state') === 'checked'
+        );
+        if (isSelected) return false;
+        if (typeof optionButton.click === 'function') optionButton.click();
+        if (control instanceof HTMLElement && typeof control.click === 'function') {{
+          const selectedAfterLabel = control.checked === true || control.getAttribute?.('aria-checked') === 'true' || control.getAttribute?.('data-state') === 'checked';
+          if (!selectedAfterLabel) control.click();
+        }}
+        return true;
+      }};
 
       const selectableOptionSelector = '[role="radio"],[role="menuitemradio"],label';
       const optionCandidates = [];
@@ -1029,29 +1045,46 @@ def permission_action_expression(action: str, command: str = "", justification: 
         await sleep(180);
         let submitText = '';
         if (!optionTarget.noSubmit) {{
-          const submit = await enabledSubmitNear(optionTarget.button, optionTarget.submit, optionTarget.container);
+          let submit = submitNear(optionTarget.button, false, optionTarget.container) || await enabledSubmitNear(optionTarget.button, optionTarget.submit, optionTarget.container);
+          if (!submit && nativeActivateOption(optionTarget.button)) {{
+            await sleep(180);
+            submit = submitNear(optionTarget.button, false, optionTarget.container) || await enabledSubmitNear(optionTarget.button, optionTarget.submit, optionTarget.container);
+          }}
           if (!submit) {{
             return {{
-              ok: false,
-              reason: '已选择权限选项，但提交按钮尚不可用',
+              ok: true,
               action,
-              choice: beforeText,
-              options: optionCandidates.slice(0, 8).map(item => ({{ score: item.score, text: item.text, hasSubmit: Boolean(item.submit), noSubmit: item.noSubmit }})),
+              clickedText: beforeText,
+              submittedText: '',
+              optionFlow: true,
+              resolvedWithoutSubmit: true,
+              score: optionTarget.score,
+              rect: {{ x: optionTarget.rect.x, y: optionTarget.rect.y, w: optionTarget.rect.width, h: optionTarget.rect.height }},
             }};
           }}
           submitText = submit.text;
           domClick(submit.button);
           await sleep(240);
+          return {{
+            ok: true,
+            action,
+            clickedText: beforeText,
+            submittedText: submitText,
+            optionFlow: true,
+            score: optionTarget.score,
+            rect: {{ x: optionTarget.rect.x, y: optionTarget.rect.y, w: optionTarget.rect.width, h: optionTarget.rect.height }},
+          }};
+        }} else {{
+          return {{
+            ok: true,
+            action,
+            clickedText: beforeText,
+            submittedText: submitText,
+            optionFlow: true,
+            score: optionTarget.score,
+            rect: {{ x: optionTarget.rect.x, y: optionTarget.rect.y, w: optionTarget.rect.width, h: optionTarget.rect.height }},
+          }};
         }}
-        return {{
-          ok: true,
-          action,
-          clickedText: beforeText,
-          submittedText: submitText,
-          optionFlow: true,
-          score: optionTarget.score,
-          rect: {{ x: optionTarget.rect.x, y: optionTarget.rect.y, w: optionTarget.rect.width, h: optionTarget.rect.height }},
-        }};
       }}
 
       const candidates = [];
