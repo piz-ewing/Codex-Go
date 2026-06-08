@@ -2993,11 +2993,7 @@ function renderThreadMenu() {
     group.latest = Math.max(group.latest, Date.parse(item.effectiveUpdatedAt || item.updatedAt || '') || item.effectiveUpdatedMs || 0);
   }
 
-  const projectGroups = [...projectMap.values()].sort((a, b) => {
-    if (a.key === currentProjectKey) return -1;
-    if (b.key === currentProjectKey) return 1;
-    return b.latest - a.latest;
-  });
+  const projectGroups = [...projectMap.values()].sort((a, b) => b.latest - a.latest);
   if (!hasSavedProjectGroupState && projectGroups.length && !openProjectKeys.size) {
     openProjectKeys.add(currentProjectKey || projectGroups[0].key);
     persistOpenProjectKeys();
@@ -3019,7 +3015,7 @@ function renderThreadMenu() {
     const label = document.createElement('div');
     section.className = 'thread-section';
     label.className = 'thread-section-label';
-    label.textContent = currentProjectKey ? '当前项目 / 最近项目' : '项目';
+    label.textContent = '项目';
     section.appendChild(label);
     projectGroups.forEach(group => appendProjectGroup(section, group, group.key === currentProjectKey));
     threadMenu.appendChild(section);
